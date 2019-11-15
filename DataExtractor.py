@@ -5,6 +5,7 @@ import os
 import xlsxwriter
 import pandas as pd
 
+
 # # Creating the file
 # data = xlsxwriter.Workbook("ExportedData.xlsx")
 # dataSheet = data.add_worksheet("Data")
@@ -12,7 +13,6 @@ import pandas as pd
 #
 # dataSheet.write("A1", 'Test')
 # data.close()
-
 # --------------------------------------------------------------------
 
 
@@ -42,9 +42,11 @@ def modify_file(section, df):
 
 # Variables that will later be replaced with input functions
 currentSection = "COP2271-29AD(13148)"
-studentSize = 47
+# Figure input
+listBase = "M4 Quiz"
 
-namesList = False
+idList = ""
+idCheck = False
 # Accessing excel files stored in the project folder
 path = os.getcwd() + "/Quizzes"
 files = os.listdir(path)
@@ -55,9 +57,26 @@ for f in files:
     label = f.split('.')[0]
     temp = pd.read_excel(finalPath)
     quiz[label] = modify_file(currentSection, temp)
-    # Generating a list of all the students' names
-    if not namesList:
-        if quiz[label].shape[0] == studentSize:
-            names = quiz[label].iloc[:, 0]
-            namesList = True
+    # Generating a list of all the students' id numbers
+    if label == listBase:
+        idList = quiz[label].iloc[:, 1]
 
+# Verifies that the student ids match for each student
+for fi in files:
+    counter = 0
+    index = 0
+    fiCurrent = fi.split('.')[0]
+    qCurrent = quiz[fiCurrent]
+    length = len(idList)
+    while index < length:
+        if int(idList[index]) == qCurrent.iloc[counter, 1]:
+            counter = counter + 1
+            index = index + 1
+        else:
+            if int(idList[index+1]) != qCurrent.iloc[counter, 1] and index+1 < length:
+                counter = counter + 1
+                index = index - 1
+            index = index + 1
+
+file = pd.read_excel(r'/Users/leslieharvey/Desktop/TestFile.xlsx')
+file.to_excel("output.xlsx", header=False, index=False)
