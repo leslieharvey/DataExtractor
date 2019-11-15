@@ -1,6 +1,7 @@
 # This will use data extraction tools to compile the desired data
 # Created by Leslie Harvey
 
+import os
 import xlsxwriter
 import pandas as pd
 
@@ -13,8 +14,6 @@ import pandas as pd
 # data.close()
 
 # --------------------------------------------------------------------
-file = pd.read_excel(r'/Users/leslieharvey/Desktop/TestFile.xlsx')
-currentSection = "COP2271-29AD(13148)"
 
 
 # Created function to process data changes
@@ -41,6 +40,24 @@ def modify_file(section, df):
     return df
 
 
-file = modify_file(currentSection, file)
+# Variables that will later be replaced with input functions
+currentSection = "COP2271-29AD(13148)"
+studentSize = 47
 
-file.to_excel("output.xlsx")
+namesList = False
+# Accessing excel files stored in the project folder
+path = os.getcwd() + "/Quizzes"
+files = os.listdir(path)
+quiz = {}
+# Store all the valuable data in a dictionary
+for f in files:
+    finalPath = path + "/" + f
+    label = f.split('.')[0]
+    temp = pd.read_excel(finalPath)
+    quiz[label] = modify_file(currentSection, temp)
+    # Generating a list of all the students' names
+    if not namesList:
+        if quiz[label].shape[0] == studentSize:
+            names = quiz[label].iloc[:, 0]
+            namesList = True
+
