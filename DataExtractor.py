@@ -5,29 +5,23 @@ import os
 import xlsxwriter
 import pandas as pd
 
-
-# # Creating the file
-# data = xlsxwriter.Workbook("ExportedData.xlsx")
-# dataSheet = data.add_worksheet("Data")
-#
-#
-# dataSheet.write("A1", 'Test')
-# data.close()
-# --------------------------------------------------------------------
+# Creating the file
+data = xlsxwriter.Workbook("ExportedData.xlsx")
+dataSheet = data.add_worksheet("Data")
 
 
 # Created function to process data changes
 def modify_file(section, df):
     for col in df:
         if col == "section":
-            for index, row in df[col].iteritems():
+            for position, row in df[col].iteritems():
                 # Deletes the students not in the desired section
-                if df[col][index] != section:
-                    df = df.drop(index)
+                if df[col][position] != section:
+                    df = df.drop(position)
                 # Only keeps the students' first attempt
                 else:
-                    if df["attempt"][index] != 1:
-                        df = df.drop(index)
+                    if df["attempt"][position] != 1:
+                        df = df.drop(position)
 
     # Sorts the values according to their student id
     df = df.sort_values(['sis_id'], ascending=True)
@@ -62,6 +56,7 @@ for f in files:
         idList = quiz[label].iloc[:, 1]
 
 # Verifies that the student ids match for each student
+colCount = 0
 for fi in files:
     counter = 0
     index = 0
@@ -70,6 +65,7 @@ for fi in files:
     length = len(idList)
     while index < length:
         if int(idList[index]) == qCurrent.iloc[counter, 1]:
+            dataSheet.write(index, colCount, qCurrent.iloc[counter, 1])
             counter = counter + 1
             index = index + 1
         else:
@@ -77,6 +73,9 @@ for fi in files:
                 counter = counter + 1
                 index = index - 1
             index = index + 1
+    colCount = colCount + 1
 
-file = pd.read_excel(r'/Users/leslieharvey/Desktop/TestFile.xlsx')
-file.to_excel("output.xlsx", header=False, index=False)
+# file = pd.read_excel(r'/Users/leslieharvey/Desktop/TestFile.xlsx')
+# file.to_excel("output.xlsx", header=False, index=False)
+
+data.close()
