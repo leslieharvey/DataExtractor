@@ -28,4 +28,9 @@ for col in file:
 # Sorts the values according to their student id
 file = file.sort_values(['sis_id'], ascending=True)
 
+# Deletes the columns not needed
+for col in file:
+    if (col != "name") and (col != "sis_id") and (col != "submitted"):
+        file = file.drop(columns=col)
+
 file.to_excel("output.xlsx")
