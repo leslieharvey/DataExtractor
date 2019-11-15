@@ -19,9 +19,13 @@ for col in file:
         for index, row in file[col].iteritems():
             # Deletes the students not in the desired section
             if file[col][index] != "COP2271-29AD(13148)":
-                print(index)
                 file = file.drop(index)
+            # Only keeps the students' first attempt
+            else:
+                if file["attempt"][index] != 1:
+                    file = file.drop(index)
 
 # Sorts the values according to their student id
 file = file.sort_values(['sis_id'], ascending=True)
+
 file.to_excel("output.xlsx")
