@@ -1,7 +1,7 @@
 from canvasapi import Canvas
 import datetime
 
-# Details needed to access your school's Canvas, your Account, and your Course
+# Details needed to access Canvas and the course
 API_URL = 'https://ufl.test.instructure.com/'
 API_KEY = '1016~40RIzLLTgT01gRVzfhbsvMFIPWWZZZY4KhPF3WfAiPWhdv9Gi2HAZMarQ6uR8oAR'
 courseID = 378337
@@ -16,8 +16,7 @@ course = canvas.get_course(courseID)
 enrollments = course.get_enrollments(type=["StudentEnrollment"], sis_section_id=section_num)
 # Build a map of student ID to their name
 idToName = dict((e.sis_user_id, e.user['name']) for e in enrollments)
-# Build a map of Canvas ID to their student ID
-# # idToCanvas = dict((e.user['id'], e.sis_user_id) for e in enrollments)
+# Build a map of Canvas ID to their student ID using a nested dictionary
 idToCanvas = {}
 for e in enrollments:
     idToCanvas[e.user['id']] = {'canvas': e.user['id'], 'UF': e.sis_user_id}
@@ -49,5 +48,5 @@ for a in assignments:
             print("NaN for: " + str(person))
     print("\n")
 
-print(idToCanvas)
-
+print(len(idToCanvas))
+print(idToCanvas[1029523]["M1 HW: Introduction Survey"])
