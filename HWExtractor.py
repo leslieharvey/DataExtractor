@@ -1,5 +1,6 @@
 from canvasapi import Canvas
 import datetime
+import xlsxwriter
 
 # Details needed to access Canvas and the course
 API_URL = 'https://ufl.test.instructure.com/'
@@ -19,7 +20,7 @@ idToName = dict((e.sis_user_id, e.user['name']) for e in enrollments)
 # Build a map of Canvas ID to their student ID using a nested dictionary
 idToCanvas = {}
 for e in enrollments:
-    idToCanvas[e.user['id']] = {'canvas': e.user['id'], 'UF': e.sis_user_id}
+    idToCanvas[e.user['id']] = {'canvas': e.user['id'], 'UF': e.sis_user_id, 'name': e.user['name']}
 
 # # Need to figure out how to get past attempt history
 # assignment = course.get_assignment(3970170)
@@ -44,9 +45,54 @@ for a in assignments:
                     hours = duration_seconds / 3600
                     idToCanvas[person].update({a.name: str(hours)})
                     # print(str(hours) + "   " + str(s.user_id))
+                    # if s.user_id == 1027771:
+                        # print(due_date)
+                        # print(sub_date)
+                        # print(duration)
+                        # print(duration_seconds)
+                        # print(hours)
         except:
             print("NaN for: " + str(person))
     print("\n")
 
-print(len(idToCanvas))
-print(idToCanvas[1029523]["M1 HW: Introduction Survey"])
+# Compile all the information into an excel workbook
+# ----------------------------------------------------
+# Creating the file
+data = xlsxwriter.Workbook("ExportedData.xlsx")
+dataSheet = data.add_worksheet("HW Submission")
+cell_format = data.add_format({'bold': True, 'center_across': True})
+
+# Inputting the headers
+row = 0
+column = 0
+dataSheet.write(row, column, "Student Name", cell_format)
+column = column + 1
+dataSheet.write(row, column, "UF ID", cell_format)
+column = column + 1
+dataSheet.write(row, column, "Canvas ID", cell_format)
+column = column + 1
+for a in assignments:
+    label = a.name.split(':')[0]
+    dataSheet.write(row, column, label, cell_format)
+    column = column + 1
+
+# Writing each person and their associated data
+row = 1
+for person in idToCanvas:
+    col = 0
+    dataSheet.write(row, col, idToCanvas[person]['name'])
+    col = col + 1
+    dataSheet.write_number(row, col, int(idToCanvas[person]['UF']))
+    col = col + 1
+    dataSheet.write_number(row, col, int(idToCanvas[person]['canvas']))
+    for a in assignments:
+        col = col + 1
+        try:
+            dataSheet.write_number(row, col, float(idToCanvas[person][a.name]))
+        except:
+            dataSheet.write(row, col, "NaN")
+    row = row + 1
+
+# Saving the excel file
+dataSheet.set_column(0, row, 18)
+data.close()
