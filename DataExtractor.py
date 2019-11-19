@@ -1,81 +1,124 @@
-# This will use data extraction tools to compile the desired data
-# Created by Leslie Harvey
-
-import os
+from canvasapi import Canvas
+import datetime
 import xlsxwriter
-import pandas as pd
 
+# Details needed to access Canvas and the course
+API_URL = 'https://ufl.instructure.com/'
+API_KEY = '1016~40RIzLLTgT01gRVzfhbsvMFIPWWZZZY4KhPF3WfAiPWhdv9Gi2HAZMarQ6uR8oAR'
+courseID = 378337
+section_num = ["000.UFL.2019-08-UF-0.13148"]
+section_ID = "COP2271-29AD(13148)"
+
+# Initialize a new Canvas object
+canvas = Canvas(API_URL, API_KEY)
+# Get a course object for this course
+course = canvas.get_course(courseID)
+
+# Get students for the specified section
+enrollments = course.get_enrollments(type=["StudentEnrollment"], sis_section_id=section_num)
+
+# Build a map of Canvas ID to their student ID using a nested dictionary for HW
+idHW = {}
+for e in enrollments:
+    idHW[e.user['id']] = {'canvas': e.user['id'], 'UF': e.sis_user_id, 'name': e.user['name']}
+assignmentsHW = course.get_assignments(includes=['overrides'], search_term="HW:")
+
+# Build a map of Canvas ID to their student ID using a nested dictionary for Quizzes
+idQuiz = {}
+for e in enrollments:
+    idQuiz[e.user['id']] = {'canvas': e.user['id'], 'UF': e.sis_user_id, 'name': e.user['name']}
+assignmentsQuiz = course.get_assignments(includes=['overrides'], search_term="Quiz")
+
+# # Need to figure out how to get past attempt history
+# assignment = course.get_assignment(3970170)
+# submissions = assignment.get_submission(1028980, include="submission_history")
+#
+# print(type(submissions.submission_history))
+
+
+# Compile all the information into an excel workbook
+# ----------------------------------------------------
 # Creating the file
 data = xlsxwriter.Workbook("ExportedData.xlsx")
-dataSheet = data.add_worksheet("Data")
+sheetQuiz = data.add_worksheet("Quiz Submission")
+sheetHW = data.add_worksheet("HW Submission")
+cell_format = data.add_format({'bold': True, 'center_across': True})
 
 
-# Created function to process data changes
-def modify_file(section, df):
-    for col in df:
-        if col == "section":
-            for position, row in df[col].iteritems():
-                # Deletes the students not in the desired section
-                if df[col][position] != section:
-                    df = df.drop(position)
-                # Only keeps the students' first attempt
-                else:
-                    if df["attempt"][position] != 1:
-                        df = df.drop(position)
+def createMap(assignments, idStructure):
+    # Searching for all of the homework assignments
+    for a in assignments:
+        print(a.name)
+        # Due date of the assignment
+        try:
+            due_date = datetime.datetime.strptime(a.due_at, "%Y-%m-%dT%H:%M:%SZ")
+        # Except needed for when there are multiple due dates
+        except:
+            overrides = a.get_overrides()
+            # Getting the override ID for the assignment
+            for o in overrides:
+                if section_ID in str(o):
+                    num = str(o).split(") (")
+                    override_ID = (num[1][:-1])
+            override = a.get_override(override_ID)
+            due_date = datetime.datetime.strptime(override.due_at, "%Y-%m-%dT%H:%M:%SZ")
+        for s in a.get_submissions(include=["submission_history"]):
+            try:
+                # Only acting on students in specified section
+                for person in idStructure:
+                    if s.user_id == person:
+                        sub_date = datetime.datetime.strptime(s.submitted_at, "%Y-%m-%dT%H:%M:%SZ")
+                        duration = due_date - sub_date
+                        duration_seconds = duration.total_seconds()
+                        hours = duration_seconds / 3600
+                        idStructure[person].update({a.name: str(hours)})
+            except:
+                print("NaN for: " + str(person))
+        print("\n")
 
-    # Sorts the values according to their student id
-    df = df.sort_values(['sis_id'], ascending=True)
 
-    # Deletes the columns not needed
-    for col in df:
-        if (col != "name") and (col != "sis_id") and (col != "submitted"):
-            df = df.drop(columns=col)
+def dataStorage(assignments, idStructure, sheet):
+    # Inputting the headers
+    row = 0
+    column = 0
+    sheet.write(row, column, "Student Name", cell_format)
+    column = column + 1
+    sheet.write(row, column, "UF ID", cell_format)
+    column = column + 1
+    sheet.write(row, column, "Canvas ID", cell_format)
+    column = column + 1
+    for a in assignments:
+        label = a.name.split(':')[0]
+        sheet.write(row, column, label, cell_format)
+        column = column + 1
 
-    return df
+    # Writing each person and their associated data
+    row = 1
+    for person in idStructure:
+        col = 0
+        sheet.write(row, col, idStructure[person]['name'])
+        col = col + 1
+        sheet.write_number(row, col, int(idStructure[person]['UF']))
+        col = col + 1
+        sheet.write_number(row, col, int(idStructure[person]['canvas']))
+        for a in assignments:
+            col = col + 1
+            try:
+                sheet.write_number(row, col, float(idStructure[person][a.name]))
+            except:
+                sheet.write(row, col, "NaN")
+        row = row + 1
+
+    sheet.set_column(0, row, 18)
 
 
-# Variables that will later be replaced with input functions
-currentSection = "COP2271-29AD(13148)"
-# Figure input
-listBase = "M4 Quiz"
+# Produce results for quizzes
+createMap(assignmentsQuiz, idQuiz)
+createMap(assignmentsHW, idHW)
 
-idList = ""
-idCheck = False
-# Accessing excel files stored in the project folder
-path = os.getcwd() + "/Quizzes"
-files = os.listdir(path)
-quiz = {}
-# Store all the valuable data in a dictionary
-for f in files:
-    finalPath = path + "/" + f
-    label = f.split('.')[0]
-    temp = pd.read_excel(finalPath)
-    quiz[label] = modify_file(currentSection, temp)
-    # Generating a list of all the students' id numbers
-    if label == listBase:
-        idList = quiz[label].iloc[:, 1]
+# Produce results for homeworks
+dataStorage(assignmentsQuiz, idQuiz, sheetQuiz)
+dataStorage(assignmentsHW, idHW, sheetHW)
 
-# Verifies that the student ids match for each student
-colCount = 0
-for fi in files:
-    counter = 0
-    index = 0
-    fiCurrent = fi.split('.')[0]
-    qCurrent = quiz[fiCurrent]
-    length = len(idList)
-    while index < length:
-        if int(idList[index]) == qCurrent.iloc[counter, 1]:
-            dataSheet.write(index, colCount, qCurrent.iloc[counter, 1])
-            counter = counter + 1
-            index = index + 1
-        else:
-            if int(idList[index+1]) != qCurrent.iloc[counter, 1] and index+1 < length:
-                counter = counter + 1
-                index = index - 1
-            index = index + 1
-    colCount = colCount + 1
-
-# file = pd.read_excel(r'/Users/leslieharvey/Desktop/TestFile.xlsx')
-# file.to_excel("output.xlsx", header=False, index=False)
-
+# Saving the excel file
 data.close()
