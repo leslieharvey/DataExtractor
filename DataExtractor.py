@@ -29,6 +29,22 @@ for e in enrollments:
     idQuiz[e.user['id']] = {'canvas': e.user['id'], 'UF': e.sis_user_id, 'name': e.user['name']}
 assignmentsQuiz = course.get_assignments(includes=['overrides'], search_term="Quiz")
 
+# Build a map of Canvas ID to their student ID using a nested dictionary for Exams
+idExam = {}
+for e in enrollments:
+    idExam[e.user['id']] = {'canvas': e.user['id'], 'UF': e.sis_user_id, 'name': e.user['name']}
+# Ensure that only exams are included in assignments
+groups = course.get_assignment_groups()
+for g in groups:
+    if g.name == "Exams":
+        examID = g.id
+        break
+totalAssignments = course.get_assignments()
+exams = []
+for t in totalAssignments:
+    if t.assignment_group_id == examID:
+        exams.append(t.id)
+assignmentsExam = course.get_assignments(includes=['overrides'], assignment_ids=exams)
 # # Need to figure out how to get past attempt history
 # assignment = course.get_assignment(3970170)
 # submissions = assignment.get_submission(1028980, include="submission_history")
@@ -42,6 +58,7 @@ assignmentsQuiz = course.get_assignments(includes=['overrides'], search_term="Qu
 data = xlsxwriter.Workbook("ExportedData.xlsx")
 sheetQuiz = data.add_worksheet("Quiz Submission")
 sheetHW = data.add_worksheet("HW Submission")
+sheetExam = data.add_worksheet("Exam Score")
 cell_format = data.add_format({'bold': True, 'center_across': True})
 
 
@@ -112,13 +129,31 @@ def dataStorage(assignments, idStructure, sheet):
     sheet.set_column(0, row, 18)
 
 
+def createMapExams(assignments, idStructure):
+    # Searching for all of the Exams
+    for a in assignments:
+        print(a.name)
+        for s in a.get_submissions(include=["submission_history"]):
+            try:
+                # Only acting on students in specified section
+                for person in idStructure:
+                    if s.user_id == person:
+                        score = s.score
+                        idStructure[person].update({a.name: str(score)})
+            except:
+                print("NaN for: " + str(person))
+        print("\n")
+
+
 # Produce results for quizzes
 createMap(assignmentsQuiz, idQuiz)
 createMap(assignmentsHW, idHW)
+createMapExams(assignmentsExam, idExam)
 
 # Produce results for homeworks
 dataStorage(assignmentsQuiz, idQuiz, sheetQuiz)
 dataStorage(assignmentsHW, idHW, sheetHW)
+dataStorage(assignmentsExam, idExam, sheetExam)
 
 # Saving the excel file
 data.close()
