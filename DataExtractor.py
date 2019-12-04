@@ -145,12 +145,12 @@ def createMapExams(assignments, idStructure):
         print("\n")
 
 
-# Produce results for quizzes
+# Create all the information maps
 createMap(assignmentsQuiz, idQuiz)
 createMap(assignmentsHW, idHW)
 createMapExams(assignmentsExam, idExam)
 
-# Produce results for homeworks
+# Store all the information maps
 dataStorage(assignmentsQuiz, idQuiz, sheetQuiz)
 dataStorage(assignmentsHW, idHW, sheetHW)
 dataStorage(assignmentsExam, idExam, sheetExam)
