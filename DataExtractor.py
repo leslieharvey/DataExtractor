@@ -45,6 +45,11 @@ for t in totalAssignments:
     if t.assignment_group_id == examID:
         exams.append(t.id)
 assignmentsExam = course.get_assignments(includes=['overrides'], assignment_ids=exams)
+
+# Build a map of Canvas ID to their student ID using a nested dictionary for Final Grades
+idFinalGrade = {}
+for e in enrollments:
+    idFinalGrade[e.user['id']] = {'canvas': e.user['id'], 'UF': e.sis_user_id, 'name': e.user['name'], 'final_grade': e.grades['current_score']}
 # # Need to figure out how to get past attempt history
 # assignment = course.get_assignment(3970170)
 # submissions = assignment.get_submission(1028980, include="submission_history")
@@ -59,6 +64,7 @@ data = xlsxwriter.Workbook("ExportedData.xlsx")
 sheetQuiz = data.add_worksheet("Quiz Submission")
 sheetHW = data.add_worksheet("HW Submission")
 sheetExam = data.add_worksheet("Exam Score")
+sheetFinalGrade = data.add_worksheet("Final Grade")
 cell_format = data.add_format({'bold': True, 'center_across': True})
 
 
@@ -129,6 +135,32 @@ def dataStorage(assignments, idStructure, sheet):
     sheet.set_column(0, row, 18)
 
 
+def dataStorageFinalGrade(idStructure, sheet):
+    # Inputting the headers
+    row = 0
+    column = 0
+    sheet.write(row, column, "Student Name", cell_format)
+    column = column + 1
+    sheet.write(row, column, "UF ID", cell_format)
+    column = column + 1
+    sheet.write(row, column, "Canvas ID", cell_format)
+    column = column + 1
+    sheet.write(row, column, "Final Grade", cell_format)
+    # Writing each person and their associated data
+    row = 1
+    for person in idStructure:
+        col = 0
+        sheet.write(row, col, idStructure[person]['name'])
+        col = col + 1
+        sheet.write_number(row, col, int(idStructure[person]['UF']))
+        col = col + 1
+        sheet.write_number(row, col, int(idStructure[person]['canvas']))
+        col = col + 1
+        sheet.write_number(row, col, float(idStructure[person]['final_grade']))
+        row = row + 1
+    sheet.set_column(0, row, 18)
+
+
 def createMapExams(assignments, idStructure):
     # Searching for all of the Exams
     for a in assignments:
@@ -154,6 +186,6 @@ createMapExams(assignmentsExam, idExam)
 dataStorage(assignmentsQuiz, idQuiz, sheetQuiz)
 dataStorage(assignmentsHW, idHW, sheetHW)
 dataStorage(assignmentsExam, idExam, sheetExam)
-
+dataStorageFinalGrade(idFinalGrade, sheetFinalGrade)
 # Saving the excel file
 data.close()
