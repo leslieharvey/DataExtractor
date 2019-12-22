@@ -60,7 +60,7 @@ for e in enrollments:
 # Compile all the information into an excel workbook
 # ----------------------------------------------------
 # Creating the file
-data = xlsxwriter.Workbook("ExportedData.xlsx")
+data = xlsxwriter.Workbook(section_ID + ".xlsx")
 sheetQuiz = data.add_worksheet("Quiz Submission")
 sheetHW = data.add_worksheet("HW Submission")
 sheetExam = data.add_worksheet("Exam Score")
