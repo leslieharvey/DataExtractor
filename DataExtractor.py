@@ -1,13 +1,8 @@
-from canvasapi import Canvas
 import datetime
 import xlsxwriter
 
 
-def extraction(API_URL, API_KEY, courseID, section_ID, quiz_adjustment, M2_adjustment, M10_adjustment):
-    # Initialize a new Canvas object
-    canvas = Canvas(API_URL, API_KEY)
-    # Get a course object for this course
-    course = canvas.get_course(courseID)
+def extraction(course, section_ID, quiz_adjustment, M2_adjustment, M10_adjustment):
     section = course.get_section(section_ID)
     section_name = section.name
 
