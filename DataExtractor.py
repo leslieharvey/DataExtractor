@@ -122,9 +122,9 @@ def createMap(assignments, idStructure, adjustment=None):
 
 
 # Fixing certain assignment due date differences
-def fixMap(assignments, idStructure, fixing, adjustment):
+def fixMap(assignments, idStructure, name, adjustment):
     for a in assignments:
-        if a.name == fixing:
+        if a.name == name:
             print("Fixing " + a.name)
             for person in idStructure:
                 idStructure[person][a.name] = float(idStructure[person][a.name]) - (adjustment.total_seconds()/3600)
