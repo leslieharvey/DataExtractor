@@ -7,7 +7,7 @@ API_URL = 'https://ufl.instructure.com/'
 API_KEY = '1016~40RIzLLTgT01gRVzfhbsvMFIPWWZZZY4KhPF3WfAiPWhdv9Gi2HAZMarQ6uR8oAR'
 courseID = 378337
 section_num = ["000.UFL.2019-08-UF-0.13148"]
-section_ID = "COP2271-29AD(13148)"
+section_name = "COP2271-29AD(13148)"
 
 num_ID = 547944
 # Initialize a new Canvas object
@@ -24,14 +24,11 @@ sections = course.get_sections()
 
 enroll = course.get_enrollments(type=["StudentEnrollment"])
 
+# Get students for the specified section
 enrollments = []
 for e in enroll:
     if e.course_section_id == num_ID:
         enrollments.append(e)
-        # print(e.attributes)
-
-# Get students for the specified section
-# enrollments = course.get_enrollments(type=["StudentEnrollment"], sis_section_id=section_num)
 
 # Build a map of Canvas ID to their student ID using a nested dictionary for HW
 idHW = {}
@@ -66,17 +63,17 @@ assignmentsExam = course.get_assignments(includes=['overrides'], assignment_ids=
 idFinalGrade = {}
 for e in enrollments:
     idFinalGrade[e.user['id']] = {'canvas': e.user['id'], 'name': e.user['name'], 'final_grade': e.grades['current_score']}
+
 # # Need to figure out how to get past attempt history
 # assignment = course.get_assignment(3970170)
 # submissions = assignment.get_submission(1028980, include="submission_history")
 #
 # print(type(submissions.submission_history))
 
-
 # Compile all the information into an excel workbook
 # ----------------------------------------------------
 # Creating the file
-data = xlsxwriter.Workbook(section_ID + ".xlsx")
+data = xlsxwriter.Workbook(section_name + ".xlsx")
 sheetQuiz = data.add_worksheet("Quiz Submission")
 sheetHW = data.add_worksheet("HW Submission")
 sheetExam = data.add_worksheet("Exam Score")
@@ -96,7 +93,7 @@ def createMap(assignments, idStructure):
             overrides = a.get_overrides()
             # Getting the override ID for the assignment
             for o in overrides:
-                if section_ID in str(o):
+                if section_name in str(o):
                     num = str(o).split(") (")
                     override_ID = (num[1][:-1])
             override = a.get_override(override_ID)
