@@ -5,6 +5,7 @@ import xlsxwriter
 def extraction(course, section_ID, quiz_adjustment, M2_adjustment, M10_adjustment):
     section = course.get_section(section_ID)
     section_name = section.name
+    print("Extracting for " + str(section_name) + "\n")
 
     # Get students for the specified section
     enroll = course.get_enrollments(type=["StudentEnrollment"])
@@ -63,7 +64,6 @@ def extraction(course, section_ID, quiz_adjustment, M2_adjustment, M10_adjustmen
     sheetFinalGrade = data.add_worksheet("Final Grade")
     cell_format = data.add_format({'bold': True, 'center_across': True})
 
-
     def createMap(assignments, idStructure, adjustment=None):
         # Searching for all of the homework assignments
         for a in assignments:
@@ -97,8 +97,7 @@ def extraction(course, section_ID, quiz_adjustment, M2_adjustment, M10_adjustmen
                             idStructure[person].update({a.name: str(hours)})
                 except:
                     print("NaN for: " + str(person))
-            print("\n")
-
+            print()
 
     # Fixing certain assignment due date differences
     def fixMap(assignments, idStructure, name, adjustment):
@@ -106,9 +105,11 @@ def extraction(course, section_ID, quiz_adjustment, M2_adjustment, M10_adjustmen
             if a.name == name:
                 print("Fixing " + a.name)
                 for person in idStructure:
-                    idStructure[person][a.name] = float(idStructure[person][a.name]) - (adjustment.total_seconds()/3600)
-                print("\n")
-
+                    try:
+                        idStructure[person][a.name] = float(idStructure[person][a.name]) - (adjustment.total_seconds()/3600)
+                    except:
+                        print("NaN for: " + str(person))
+                print()
 
     def dataStorage(assignments, idStructure, sheet):
         # Inputting the headers
@@ -176,7 +177,7 @@ def extraction(course, section_ID, quiz_adjustment, M2_adjustment, M10_adjustmen
                             idStructure[person].update({a.name: str(score)})
                 except:
                     print("NaN for: " + str(person))
-            print("\n")
+            print()
 
     # Create all the information maps
     createMap(assignmentsQuiz, idQuiz, quiz_adjustment)
@@ -193,3 +194,5 @@ def extraction(course, section_ID, quiz_adjustment, M2_adjustment, M10_adjustmen
 
     # Saving the excel file
     data.close()
+
+    print("\n")
