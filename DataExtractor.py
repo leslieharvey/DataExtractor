@@ -8,8 +8,13 @@ API_KEY = '1016~40RIzLLTgT01gRVzfhbsvMFIPWWZZZY4KhPF3WfAiPWhdv9Gi2HAZMarQ6uR8oAR
 courseID = 378337
 section_num = ["000.UFL.2019-08-UF-0.13148"]
 section_name = "COP2271-29AD(13148)"
+section_ID = 547944
 
-num_ID = 547944
+# Use the quiz adjustment if needed
+quiz_adjustment = datetime.timedelta(hours=4, minutes=20)
+M2_adjustment = datetime.timedelta(hours=-4, minutes=-20)
+M10_adjustment = datetime.timedelta(hours=9, minutes=50)
+
 # Initialize a new Canvas object
 canvas = Canvas(API_URL, API_KEY)
 # Get a course object for this course
@@ -22,12 +27,11 @@ sections = course.get_sections()
 #     print(s.id)
 #     print("")
 
-enroll = course.get_enrollments(type=["StudentEnrollment"])
-
 # Get students for the specified section
+enroll = course.get_enrollments(type=["StudentEnrollment"])
 enrollments = []
 for e in enroll:
-    if e.course_section_id == num_ID:
+    if e.course_section_id == section_ID:
         enrollments.append(e)
 
 # Build a map of Canvas ID to their student ID using a nested dictionary for HW
@@ -81,13 +85,15 @@ sheetFinalGrade = data.add_worksheet("Final Grade")
 cell_format = data.add_format({'bold': True, 'center_across': True})
 
 
-def createMap(assignments, idStructure):
+def createMap(assignments, idStructure, adjustment=None):
     # Searching for all of the homework assignments
     for a in assignments:
         print(a.name)
         # Due date of the assignment
         try:
             due_date = datetime.datetime.strptime(a.due_at, "%Y-%m-%dT%H:%M:%SZ")
+            if adjustment is not None:
+                due_date -= quiz_adjustment
         # Except needed for when there are multiple due dates
         except:
             overrides = a.get_overrides()
@@ -98,6 +104,8 @@ def createMap(assignments, idStructure):
                     override_ID = (num[1][:-1])
             override = a.get_override(override_ID)
             due_date = datetime.datetime.strptime(override.due_at, "%Y-%m-%dT%H:%M:%SZ")
+            if adjustment is not None:
+                due_date -= quiz_adjustment
         for s in a.get_submissions(include=["submission_history"]):
             try:
                 # Only acting on students in specified section
@@ -111,6 +119,16 @@ def createMap(assignments, idStructure):
             except:
                 print("NaN for: " + str(person))
         print("\n")
+
+
+# Fixing certain assignment due date differences
+def fixMap(assignments, idStructure, fixing, adjustment):
+    for a in assignments:
+        if a.name == fixing:
+            print("Fixing " + a.name)
+            for person in idStructure:
+                idStructure[person][a.name] = float(idStructure[person][a.name]) - (adjustment.total_seconds()/3600)
+            print("\n")
 
 
 def dataStorage(assignments, idStructure, sheet):
@@ -164,6 +182,7 @@ def dataStorageFinalGrade(idStructure, sheet):
         sheet.write_number(row, col, float(idStructure[person]['final_grade']))
         row = row + 1
     sheet.set_column(0, row, 18)
+    print("Final Grade")
 
 
 def createMapExams(assignments, idStructure):
@@ -183,7 +202,9 @@ def createMapExams(assignments, idStructure):
 
 
 # Create all the information maps
-createMap(assignmentsQuiz, idQuiz)
+createMap(assignmentsQuiz, idQuiz, quiz_adjustment)
+fixMap(assignmentsQuiz, idQuiz, "M2 Quiz: Input/Output", M2_adjustment)
+fixMap(assignmentsQuiz, idQuiz, "M10 Quiz: Images!", M10_adjustment)
 createMap(assignmentsHW, idHW)
 createMapExams(assignmentsExam, idExam)
 
@@ -192,5 +213,6 @@ dataStorage(assignmentsQuiz, idQuiz, sheetQuiz)
 dataStorage(assignmentsHW, idHW, sheetHW)
 dataStorage(assignmentsExam, idExam, sheetExam)
 dataStorageFinalGrade(idFinalGrade, sheetFinalGrade)
+
 # Saving the excel file
 data.close()
