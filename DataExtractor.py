@@ -141,7 +141,6 @@ def extraction(course, section_ID, quiz_adjustment, M2_adjustment, M10_adjustmen
 
         sheet.set_column(0, row, 18)
 
-
     def dataStorageFinalGrade(idStructure, sheet):
         # Inputting the headers
         row = 0
