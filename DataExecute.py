@@ -13,8 +13,8 @@ canvas = Canvas(API_URL, API_KEY)
 course = canvas.get_course(courseID)
 
 # Use the quiz adjustment if needed (for 547944 - 13148)
-quiz_adjustment = datetime.timedelta(hours=4, minutes=20) # pull back
-M2_adjustment = datetime.timedelta(hours=-4, minutes=-20) # push back
+quiz_adjustment = datetime.timedelta(hours=4, minutes=20)  # pull back
+M2_adjustment = datetime.timedelta(hours=-4, minutes=-20)  # push back
 M10_adjustment = datetime.timedelta(hours=9, minutes=50)
 
 # NEED TO MAKE ADJUSTMENTS ACCURATE FOR ALL SECTIONS
