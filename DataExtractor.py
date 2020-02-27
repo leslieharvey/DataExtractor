@@ -180,7 +180,7 @@ def extraction(course, section_ID, quiz_adjustment, M2_adjustment, M10_adjustmen
 
     # Create all the information maps
     createMap(assignmentsQuiz, idQuiz, quiz_adjustment)
-    fixMap(assignmentsQuiz, idQuiz, "M2 Quiz: Input/Output", M2_adjustment)
+    fixMap(assignmentsQuiz, idQuiz, "M3 Quiz: Conditionals (if-else)", M2_adjustment)
     fixMap(assignmentsQuiz, idQuiz, "M10 Quiz: Images!", M10_adjustment)
     createMap(assignmentsHW, idHW)
     createMapExams(assignmentsExam, idExam)
